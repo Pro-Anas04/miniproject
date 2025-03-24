@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class addExpensesPage extends StatefulWidget {
-  const addExpensesPage({super.key});
+  const addExpensesPage({Key? key}) : super(key: key);
 
   @override
-  State<addExpensesPage> createState() => _addExpensesPageState();
+  State<addExpensesPage> createState() => _AddExpensesScreenState();
 }
 
-class _addExpensesPageState extends State<addExpensesPage> {
+class _AddExpensesScreenState extends State<addExpensesPage> {
   final TextEditingController _amountController = TextEditingController();
   String? _selectedCategory;
 
@@ -16,8 +16,35 @@ class _addExpensesPageState extends State<addExpensesPage> {
     'Drunk',
     'Sport',
     'Game',
-    'Food',
   ];
+
+  void _addExpense() {
+    if (_amountController.text.isEmpty || _selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรุณากรอกจำนวนเงินและเลือกหมวดหมู่'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // ทำการบันทึกข้อมูลค่าใช้จ่าย
+    // โค้ดส่วนนี้จะเพิ่มข้อมูลเข้าสู่ฐานข้อมูลหรือ state management ที่คุณใช้
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'เพิ่มค่าใช้จ่าย ${_amountController.text} บาท ในหมวด $_selectedCategory เรียบร้อยแล้ว'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // ล้างข้อมูลหลังบันทึก
+    setState(() {
+      _amountController.clear();
+      _selectedCategory = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -30,22 +57,20 @@ class _addExpensesPageState extends State<addExpensesPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: const BackButton(
+          color: Colors.black,
         ),
-        title: Center(
-          child: Text(
-            'Add Expenses',
-            style: TextStyle(
-              color: Colors.green[400],
-              fontSize: 26,
-              fontWeight: FontWeight.w500,
-            ),
+        title: const Text(
+          'Add Expenses',
+          style: TextStyle(
+            color: Colors.green,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        centerTitle: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -71,8 +96,8 @@ class _addExpensesPageState extends State<addExpensesPage> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 15,
+                  horizontal: 16,
+                  vertical: 14,
                 ),
               ),
             ),
@@ -85,44 +110,68 @@ class _addExpensesPageState extends State<addExpensesPage> {
               ),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: List.generate(
-                _categories.length,
-                (index) => _buildCategoryButton(_categories[index]),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 1,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedCategory = category;
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2D4F63),
+                      borderRadius: BorderRadius.circular(8),
+                      border: _selectedCategory == category
+                          ? Border.all(color: Colors.blue, width: 2)
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _addExpense,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'เพิ่มค่าใช้จ่าย',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryButton(String category) {
-    final bool isSelected = _selectedCategory == category;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategory = category;
-        });
-      },
-      child: Container(
-        width: 80,
-        height: 80,
-        decoration: BoxDecoration(
-          color: const Color(0xFF2D5169),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            category,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ),
       ),
     );
