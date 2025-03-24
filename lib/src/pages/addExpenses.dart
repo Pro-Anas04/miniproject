@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:miniproject/service/expense_model.dart';
+import 'package:miniproject/service/database_helper.dart';
 
 class addExpensesPage extends StatefulWidget {
   const addExpensesPage({Key? key}) : super(key: key);
@@ -10,7 +12,6 @@ class addExpensesPage extends StatefulWidget {
 class _AddExpensesScreenState extends State<addExpensesPage> {
   final TextEditingController _amountController = TextEditingController();
   String? _selectedCategory;
-
   final List<String> _categories = [
     'Food',
     'Drunk',
@@ -18,7 +19,7 @@ class _AddExpensesScreenState extends State<addExpensesPage> {
     'Game',
   ];
 
-  void _addExpense() {
+  void _addExpense() async {
     if (_amountController.text.isEmpty || _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -29,21 +30,54 @@ class _AddExpensesScreenState extends State<addExpensesPage> {
       return;
     }
 
-    // ทำการบันทึกข้อมูลค่าใช้จ่าย
-    // โค้ดส่วนนี้จะเพิ่มข้อมูลเข้าสู่ฐานข้อมูลหรือ state management ที่คุณใช้
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'เพิ่มค่าใช้จ่าย ${_amountController.text} บาท ในหมวด $_selectedCategory เรียบร้อยแล้ว'),
-        backgroundColor: Colors.green,
-      ),
+    // แปลงข้อความเป็นตัวเลข
+    double amount;
+    try {
+      amount = double.parse(_amountController.text);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรุณากรอกจำนวนเงินให้ถูกต้อง'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // สร้างข้อมูลค่าใช้จ่าย
+    final expense = Expense(
+      amount: amount,
+      category: _selectedCategory!,
+      date: DateTime.now(),
     );
 
-    // ล้างข้อมูลหลังบันทึก
-    setState(() {
-      _amountController.clear();
-      _selectedCategory = null;
-    });
+    // บันทึกลงฐานข้อมูล
+    try {
+      final id = await DatabaseHelper.instance.insertExpense(expense);
+
+      if (id > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'เพิ่มค่าใช้จ่าย ${_amountController.text} บาท ในหมวด $_selectedCategory เรียบร้อยแล้ว'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // ล้างข้อมูลหลังบันทึก
+        setState(() {
+          _amountController.clear();
+          _selectedCategory = null;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เกิดข้อผิดพลาด: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
